@@ -1,0 +1,3 @@
+# this terminal command will query the sidewalk database and output the street_length_data.csv file in your current dir, copy into cmsc634_sidewalk-mTurk/data
+
+psql -d sidewalk -t -A -F"," -c "SELECT sidewalk.audit_task.user_id, sidewalk.audit_task.street_edge_id, sidewalk.audit_task.task_start, sidewalk.audit_task.task_end, sidewalk.street_edge.x1, sidewalk.street_edge.y1, sidewalk.street_edge.x2, sidewalk.street_edge.y2 FROM sidewalk.audit_task INNER JOIN sidewalk.street_edge ON sidewalk.audit_task.street_edge_id = sidewalk.street_edge.street_edge_id WHERE (sidewalk.audit_task.completed = true)" > street_length_data.csv
