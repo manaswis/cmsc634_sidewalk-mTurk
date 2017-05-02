@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
 import sys
-
+from haversine import haversine # pip install haversine
 
 # read in data
 f = open('../data/street_length_data.csv')
-names = ["user_id", "street_edge_id", "start_time", "end_time", "long1", "lat1", "long2", "lat2"]
+names = ["user_id", "street_edge_id", "start_time", "end_time", "lng1", "lat1", "lng2", "lat2"]
 data = np.genfromtxt(f, delimiter=',', names=names, case_sensitive=True, dtype=None)
 f.close()
 
@@ -33,3 +33,22 @@ def calculateDuration(df):
 # end_time-start_time, and calculate duration for all remaining as end_time[i]-end_time[i-1]
 # TODO group by IP address if anon user (97760883-8ef0-4309-9a5e-0c086ef27573)
 street_data = street_data.groupby(['user_id', 'start_time']).apply(calculateDuration)
+
+# calculate  distance between endpoints of street, minutes per km, and speed
+street_data['dist'] = street_data.apply(lambda x: haversine((x.lat1,x.lng1),(x.lat2,x.lng2)), axis=1)
+street_data['mins'] = street_data.apply(lambda x: x.duration / pd.Timedelta('1 minute'), axis=1)
+street_data['mins_per_km'] = street_data['mins'] / street_data['dist']
+street_data['mps'] = 1000.0 * street_data['dist'] / (60 * street_data['mins'])
+
+# throw out the data with unreasonably long time to completion (threw out those
+# over 3 hours, but there were a lot that were on the order of a year because of
+# a bug manifesting itself in the earlier data) and unreasonably high speeds;
+# anything above 7.5m/s (17mph) right now.
+street_data = street_data.drop(street_data[street_data.mins > 180].index)
+street_data = street_data.drop(street_data[street_data.mps > 7.5].index)
+
+# print average m/s
+# TODO figure out why the answer is slightly different than answer from R script
+print str((sum(street_data['dist'])*1000.0)/(60*sum(street_data['mins']))) # m/s
+
+sys.exit()
