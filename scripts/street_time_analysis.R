@@ -74,7 +74,7 @@ street.data <- street.data[!(dups.from.top | dups.from.bottom),]
 # this is the number we care about, average minutes per km, can be used to
 # compute how much to pay for missions of a given distance (given a wage)
 sum(street.data$dist) / (60*sum(street.data$duration)) # 0.8 m/s
-sum(street.data$duration) / (sum(street.data$dist)/1000) # 20.7 km/h
+sum(street.data$duration) / (sum(street.data$dist)/1000) # 20.7 min/km
 #median(street.data$min.per.km)
 #median(street.data$speed)
 

@@ -1,2 +1,1 @@
-data/label_data.csv
-data/street_length_data.csv
+data/*.csv

@@ -12,6 +12,9 @@ f.close()
 # convert to pandas dataframe
 street_data = pd.DataFrame(data, columns=data.dtype.names)
 
+# remove duplicate columns
+street_data = street_data.drop_duplicates()
+
 # correctly format start and end time from strings, and fill a time duration column w/ dummy vals
 street_data['start_time'] = pd.to_datetime(street_data['start_time'], format='%Y-%m-%d %H:%M:%S')
 street_data['end_time'] = pd.to_datetime(street_data['end_time'], format='%Y-%m-%d %H:%M:%S')
@@ -26,18 +29,17 @@ def calculateDuration(df):
 	if len(df) > 1:
 		df['duration'] = (df['end_time'] - df['end_time'].shift()).fillna(0)
 	# the first entry has a duration of end_time-start_time
-	df.iloc[0]['duration'] = df.iloc[0]['end_time'] - df.iloc[0]['start_time']
+	df.iloc[0, df.columns.get_loc('duration')] = df.iloc[0]['end_time'] - df.iloc[0]['start_time']
 	return df
 
 # group by user ID and start time, then calculate duration for first in each group as
 # end_time-start_time, and calculate duration for all remaining as end_time[i]-end_time[i-1]
 # TODO group by IP address if anon user (97760883-8ef0-4309-9a5e-0c086ef27573)
-street_data = street_data.groupby(['user_id', 'start_time']).apply(calculateDuration)
+street_data = street_data.groupby(['user_id', 'start_time'], as_index=False, group_keys=False).apply(calculateDuration)
 
 # calculate  distance between endpoints of street, minutes per km, and speed
 street_data['dist'] = street_data.apply(lambda x: haversine((x.lat1,x.lng1),(x.lat2,x.lng2)), axis=1)
 street_data['mins'] = street_data.apply(lambda x: x.duration / pd.Timedelta('1 minute'), axis=1)
-street_data['mins_per_km'] = street_data['mins'] / street_data['dist']
 street_data['mps'] = 1000.0 * street_data['dist'] / (60 * street_data['mins'])
 
 # throw out the data with unreasonably long time to completion (threw out those
@@ -47,8 +49,9 @@ street_data['mps'] = 1000.0 * street_data['dist'] / (60 * street_data['mins'])
 street_data = street_data.drop(street_data[street_data.mins > 180].index)
 street_data = street_data.drop(street_data[street_data.mps > 7.5].index)
 
-# print average m/s
-# TODO figure out why the answer is slightly different than answer from R script
-print str((sum(street_data['dist'])*1000.0)/(60*sum(street_data['mins']))) # m/s
+# print amount to pay for a 1000ft mission at 7.25$/hour, the federal minimum wage: $0.85 per HIT!
+# $/hour * hour/minute * minutes/kilometer * kilometer/feet * 1000ft/mission = $/mission
+print 'How much to charge per HIT:'
+print str(7.25 * (1/60.0) * (sum(street_data['mins']) / sum(street_data['dist'])) * (1/3280.84) * 1000)
 
 sys.exit()
