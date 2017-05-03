@@ -39,7 +39,7 @@ label_sample['cluster'] = cut_tree(label_link, height = 0.5)
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
 # of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
 # we can look at them by hand through the admin interface to decide.
-included_labels = {} # key: cluster_number, value: (label_type, (lat, lng))
+included_labels = {} # key: cluster_number, value: (label_type, lat, lng)
 problem_clusters = {} # key: cluster_number, value: indices or labels in the cluster
 clusters = label_sample.groupby('cluster')
 for clust_num, clust in clusters:
@@ -47,8 +47,13 @@ for clust_num, clust in clusters:
 	# if at least 3 out of the 5 had this label, include it
 	label_type, num_of_label_type = Counter(clust['label_type']).most_common(1)[0]
 	if num_of_label_type > 2:
-		included_labels[clust_num] = (label_type, np.mean(clust['coords'].tolist(), axis=0))
+		ave = np.mean(clust['coords'].tolist(), axis=0)
+		included_labels[clust_num] = (label_type, ave[0], ave[1])
 	else:
 		problem_clusters[clust_num] = clust.index
+
+# output the labels that we are sure are in the ground truth as a csv
+included = pd.DataFrame(included_labels.values(), columns=['type', 'lat', 'lng'])
+included.to_csv('../data/ground_truth.csv', index=False)
 
 sys.exit()
