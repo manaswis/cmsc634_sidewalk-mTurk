@@ -4,6 +4,8 @@ from haversine import haversine # pip install haversine
 import sys
 from scipy.cluster.hierarchy import linkage, cut_tree, dendrogram
 
+from collections import Counter
+
 # read in data
 f = open('../data/label_data.csv')
 names = ["lng", "lat", "label_type", "user_id"]
@@ -27,24 +29,26 @@ haver_vec = np.vectorize(haversine, otypes=[np.float64])
 dist_matrix = label_sample.groupby('id').apply(lambda x: pd.Series(haver_vec(label_sample.coords, x.coords)))
 
 # cluster based on distance and maybe label_type
+# TODO decided on a method of clustering
 label_link = linkage(dist_matrix)
 
 # cuts tree so that only labels less than 0.5m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
 label_sample['cluster'] = cut_tree(label_link, height = 0.5)
 
-# TODO majority vote to determine what is included
-binary_labels = {} # key: cluster_number, value: (lat, lng)
-# binary
+# Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
+# of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
+# we can look at them by hand through the admin interface to decide.
+included_labels = {} # key: cluster_number, value: (label_type, (lat, lng))
+problem_clusters = {} # key: cluster_number, value: indices or labels in the cluster
 clusters = label_sample.groupby('cluster')
 for clust_num, clust in clusters:
 	# TODO check for and remove duplicate labels from same user (prob need to check if same session)
 	# if at least 3 out of the 5 had this label, include it
-	if len(clust) > 2:
-		binary_labels[clust_num] = np.mean(clust['coords'].tolist(), axis=0)
-
-# multi-class
-#clusters = label_sample.groupby('label_type', 'cluster')
-multiclass_labels = {}
+	label_type, num_of_label_type = Counter(clust['label_type']).most_common(1)[0]
+	if num_of_label_type > 2:
+		included_labels[clust_num] = (label_type, np.mean(clust['coords'].tolist(), axis=0))
+	else:
+		problem_clusters[clust_num] = clust.index
 
 sys.exit()
