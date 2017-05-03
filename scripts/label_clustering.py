@@ -6,7 +6,7 @@ from scipy.cluster.hierarchy import linkage, cut_tree, dendrogram
 
 # read in data
 f = open('../data/label_data.csv')
-names = ["lng", "lat", "label.type", "user.id"]
+names = ["lng", "lat", "label_type", "user_id"]
 data = np.genfromtxt(f, delimiter=',', names=names, case_sensitive=True, dtype=None)
 f.close()
 
@@ -26,7 +26,7 @@ label_sample = label_data.sample(1000)
 haver_vec = np.vectorize(haversine, otypes=[np.float64])
 dist_matrix = label_sample.groupby('id').apply(lambda x: pd.Series(haver_vec(label_sample.coords, x.coords)))
 
-# cluster based on distance and maybe label type
+# cluster based on distance and maybe label_type
 label_link = linkage(dist_matrix)
 
 # cuts tree so that only labels less than 0.5m apart are clustered, adds a col
@@ -34,5 +34,17 @@ label_link = linkage(dist_matrix)
 label_sample['cluster'] = cut_tree(label_link, height = 0.5)
 
 # TODO majority vote to determine what is included
+binary_labels = {} # key: cluster_number, value: (lat, lng)
+# binary
+clusters = label_sample.groupby('cluster')
+for clust_num, clust in clusters:
+	# TODO check for and remove duplicate labels from same user (prob need to check if same session)
+	# if at least 3 out of the 5 had this label, include it
+	if len(clust) > 2:
+		binary_labels[clust_num] = np.mean(clust['coords'].tolist(), axis=0)
+
+# multi-class
+#clusters = label_sample.groupby('label_type', 'cluster')
+multiclass_labels = {}
 
 sys.exit()
