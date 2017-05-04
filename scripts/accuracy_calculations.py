@@ -59,7 +59,7 @@ false_positive_multi = len(turk_left_mutli)
 # calculate precision, recall, and f-measure
 precision_multi = true_positive_multi / (1.0*true_positive_multi + false_positive_multi)
 recall_multi = true_positive_multi / (1.0*true_positive_multi + false_negative_multi)
-f_measure_multi = precision_multi * recall_multi / (precision_multi + recall_multi)
+f_measure_multi = 2.0 * precision_multi * recall_multi / (precision_multi + recall_multi)
 
 
 sys.exit()
