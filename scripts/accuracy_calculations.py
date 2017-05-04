@@ -30,6 +30,11 @@ for row in ground_truth.iterrows():
 
 false_positive_binary = len(turk_left_binary)
 
+# calculate precision, recall, and f-measure
+precision_binary = true_positive_binary / (1.0*true_positive_binary + false_positive_binary)
+recall_binary = true_positive_binary / (1.0*true_positive_binary + false_negative_binary)
+f_measure_binary = precision_binary * recall_binary / (precision_binary + recall_binary)
+
 
 # multiclass classification. direct matches with same label type are true
 # positive, if nothing is close enough with same label type it is false
@@ -50,6 +55,11 @@ for row in ground_truth.iterrows():
 		false_negative_multi += 1
 
 false_positive_multi = len(turk_left_mutli)
+
+# calculate precision, recall, and f-measure
+precision_multi = true_positive_multi / (1.0*true_positive_multi + false_positive_multi)
+recall_multi = true_positive_multi / (1.0*true_positive_multi + false_negative_multi)
+f_measure_multi = precision_multi * recall_multi / (precision_multi + recall_multi)
 
 
 sys.exit()
