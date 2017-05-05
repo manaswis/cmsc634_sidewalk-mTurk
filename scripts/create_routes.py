@@ -74,6 +74,11 @@ except:
 
 # In[ ]:
 
+engine = create_engine('postgresql://sidewalk:sidewalk@localhost:5000/sidewalk')
+
+
+# In[ ]:
+
 cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
@@ -116,6 +121,17 @@ edges["length"] = edges.apply(haversine_distance,axis=1)
 
 # Only consider the subset of columns (csubset) that we need for path-finding.
 edges_csubset = edges.filter(['region_id','source','target','street_edge_id','length'])
+
+
+# In[ ]:
+
+if False:
+    edges_csubset.set_index('street_edge_id',inplace=True)
+
+
+# In[ ]:
+
+edges_csubset.to_sql('street_edge_length', engine, if_exists='replace')
 
 
 # In[ ]:
@@ -400,7 +416,7 @@ route_street_table.index.names = ['route_street_id']
 
 # In[ ]:
 
-route_table = route_street_table.groupby(['route_id','region_id'])['length'].agg({'route_length':np.sum,'mean_street_length':np.mean,'std_street_length':np.std,'street_count':len})
+route_table = route_street_table.groupby(['route_id','region_id'])['length'].agg({'street_count':len,'route_length_mi':np.sum,'mean_street_length_mi':np.mean,'std_street_length_mi':np.std})
 route_table['street_count'] = route_table['street_count'].astype(int)
 
 
@@ -408,11 +424,6 @@ route_table['street_count'] = route_table['street_count'].astype(int)
 
 # In[ ]:
 
-engine = create_engine('postgresql://sidewalk:sidewalk@localhost:5000/sidewalk')
-
-
-# In[ ]:
-
-route_street_table.to_sql('route_street_table', engine, if_exists='replace')
-route_table.to_sql('route_table', engine, if_exists='replace')
+route_street_table.to_sql('route_street', engine, if_exists='replace')
+route_table.to_sql('route', engine, if_exists='replace')
 
