@@ -30,11 +30,11 @@ dist_matrix = label_sample.groupby('id').apply(lambda x: pd.Series(haver_vec(lab
 
 # cluster based on distance and maybe label_type
 # TODO decided on a method of clustering
-label_link = linkage(dist_matrix)
+label_link = linkage(dist_matrix, method='complete')
 
 # cuts tree so that only labels less than 0.5m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
-label_sample['cluster'] = cut_tree(label_link, height = 0.5)
+label_sample['cluster'] = cut_tree(label_link, height = 1.0)
 
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
 # of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
@@ -57,3 +57,4 @@ included = pd.DataFrame(included_labels.values(), columns=['type', 'lat', 'lng']
 included.to_csv('../data/ground_truth.csv', index=False)
 
 sys.exit()
+
