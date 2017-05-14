@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from haversine import haversine # pip install haversine
 import sys
+from hopcroftkarp import HopcroftKarp # easy_install hopcroftkarp
 
 # read in ground truth
 ground_truth = pd.read_csv('../data/ground_truth.csv')
@@ -12,54 +13,50 @@ turker_labels = pd.read_csv('../data/ground_truth.csv')
 ground_truth['coords'] = ground_truth.apply(lambda x: (x.lat, x.lng), axis = 1)
 turker_labels['coords'] = turker_labels.apply(lambda x: (x.lat, x.lng), axis = 1)
 
-# binary classification. any direct matches are a true positive, if nothing
-# matches some ground truth label it is false negative, any turker labels not
-# matched to a ground truth label is a false positive.
-turk_left_binary = turker_labels.copy()
-true_positive_binary = 0
-false_negative_binary = 0
-for row in ground_truth.iterrows():
-	# get distance from this label in ground truth to every remaining turker label
-	dists = turk_left_binary.apply(lambda x: haversine(x.coords, row[1].coords), axis=1)
-	# check if the closest one is less than 0.5 meters away, if so it is true pos o/w false neg
-	if dists.loc[dists.idxmin()] < 0.5:
-		true_positive_binary += 1
-		turk_left_binary = turk_left_binary.drop(dists.idxmin())
-	else:
-		false_negative_binary += 1
+# 
+ground_truth['id'] = 'g' + ground_truth.index.astype(str)
+turker_labels['id'] = 't' + turker_labels.index.astype(str)
 
-false_positive_binary = len(turk_left_binary)
+# each graph is a dictionary with the key being the id of label in ground truth, and the value being
+# a list of ids for labels in the turker label set that could be matched to it.
+binary_graph = dict(zip(ground_truth.id, [[] for i in range(len(ground_truth))]))
+multi_graph = dict(zip(ground_truth.id, [[] for i in range(len(ground_truth))]))
+
+# binary: for every ground truth label, find which turker labels are less than 0.5 meters away
+for row in ground_truth.iterrows():
+	match = turker_labels.apply(lambda x: haversine(x.coords, row[1].coords) < 0.5, axis=1)
+	binary_graph[row[1].id].extend(turker_labels.id[match].values)
+
+# compute maximum matching
+binary_matching = HopcroftKarp(binary_graph).maximum_matching()
 
 # calculate precision, recall, and f-measure
+true_positive_binary = len(binary_matching) / 2 # number of matches
+false_positive_binary = len(turker_labels) - true_positive_binary # unmatched turker labels
+false_negative_binary = len(ground_truth) - true_positive_binary # unmatched ground truth labels
+
 precision_binary = true_positive_binary / (1.0*true_positive_binary + false_positive_binary)
 recall_binary = true_positive_binary / (1.0*true_positive_binary + false_negative_binary)
 f_measure_binary = precision_binary * recall_binary / (precision_binary + recall_binary)
 
 
-# multiclass classification. direct matches with same label type are true
-# positive, if nothing is close enough with same label type it is false
-# negative, and any turker labels not matched to a ground truth label (including
-# the ones that were close enough but had wrong type) are false positives.
-turk_left_multi = turker_labels.copy()
-true_positive_multi = 0
-false_negative_multi = 0
+# multiclass: for every ground truth label, find which turker labels have the same label type and
+# are less than 0.5 meters away
 for row in ground_truth.iterrows():
-	# get distance from this label in ground truth to every remaining turker label w/ same type
-	same_type_labels = turk_left_multi[turk_left_multi.type == row[1].type]
-	dists = same_type_labels.apply(lambda x: haversine(x.coords, row[1].coords), axis=1)
-	# check if the closest one is less than 0.5 meters away, if so it is true pos o/w false neg
-	if dists.loc[dists.idxmin()] < 0.5:
-		true_positive_multi += 1
-		turk_left_multi = turk_left_multi.drop(dists.idxmin())
-	else:
-		false_negative_multi += 1
+	match = turker_labels.apply(lambda x: x.type == row[1].type and haversine(x.coords, row[1].coords) < 0.5, axis=1)
+	multi_graph[row[1].id].extend(turker_labels.id[match].values)
 
-false_positive_multi = len(turk_left_multi)
+# compute maximum matching
+multi_matching = HopcroftKarp(multi_graph).maximum_matching()
 
 # calculate precision, recall, and f-measure
+true_positive_multi = len(multi_matching) / 2 # number of matches
+false_positive_multi = len(turker_labels) - true_positive_multi # unmatched turker labels
+false_negative_multi = len(ground_truth) - true_positive_multi # unmatched ground truth labels
+
 precision_multi = true_positive_multi / (1.0*true_positive_multi + false_positive_multi)
 recall_multi = true_positive_multi / (1.0*true_positive_multi + false_negative_multi)
-f_measure_multi = 2.0 * precision_multi * recall_multi / (precision_multi + recall_multi)
+f_measure_multi = precision_multi * recall_multi / (precision_multi + recall_multi)
 
 
 sys.exit()
