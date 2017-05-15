@@ -5,9 +5,9 @@ import sys
 from hopcroftkarp import HopcroftKarp # easy_install hopcroftkarp
 
 # read in ground truth
-ground_truth = pd.read_csv('../data/ground_truth.csv')
+ground_truth = pd.read_csv('../data/ground_truth-part1.csv')
 # read in turker labels
-turker_labels = pd.read_csv('../data/ground_truth.csv')
+turker_labels = pd.read_csv('../data/turker-final.csv')
 
 # put lat-lng in a tuple so it plays nice w/ haversine function
 ground_truth['coords'] = ground_truth.apply(lambda x: (x.lat, x.lng), axis = 1)
