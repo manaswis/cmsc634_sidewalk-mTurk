@@ -6,7 +6,8 @@ from scipy.cluster.hierarchy import linkage, cut_tree, dendrogram
 from collections import Counter
 
 # read in data
-names = ["lng", "lat", "label_type", "user_id"]
+names = ['lng', 'lat', 'label_type', 'user_id']
+#names = ['lng', 'lat', 'label_type', 'user_id', 'asmt_id', 'turker_id', 'route_id']
 label_data = pd.read_csv('../data/label_data.csv', names=names)
 
 # remove weird entries with longitude values (on the order of 10^14)
@@ -19,11 +20,11 @@ label_data['coords'] = label_data.apply(lambda x: (x.lat, x.lng), axis = 1)
 label_data['id'] =  label_data.index.values
 
 # sample data so that distance matrix isn't too large to fit in memory
-label_sample = label_data.sample(1000)
+label_data = label_data.sample(1000)
 
 # create distance matrix between all pairs of labels
 haver_vec = np.vectorize(haversine, otypes=[np.float64])
-dist_matrix = label_sample.groupby('id').apply(lambda x: pd.Series(haver_vec(label_sample.coords, x.coords)))
+dist_matrix = label_data.groupby('id').apply(lambda x: pd.Series(haver_vec(label_data.coords, x.coords)))
 
 # cluster based on distance and maybe label_type
 # TODO decided on a method of clustering
@@ -31,19 +32,19 @@ label_link = linkage(dist_matrix, method='complete')
 
 # cuts tree so that only labels less than 0.5m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
-label_sample['cluster'] = cut_tree(label_link, height = 1.0)
+label_data['cluster'] = cut_tree(label_link, height = 1.0)
 
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
 # of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
 # we can look at them by hand through the admin interface to decide.
 included_labels = {} # key: cluster_number, value: (label_type, lat, lng)
 problem_clusters = {} # key: cluster_number, value: indices or labels in the cluster
-clusters = label_sample.groupby('cluster')
+clusters = label_data.groupby('cluster')
 for clust_num, clust in clusters:
 	# TODO check for and remove duplicate labels from same user (prob need to check if same session)
 	# if at least 3 out of the 5 had this label, include it
 	label_type, num_of_label_type = Counter(clust['label_type']).most_common(1)[0]
-	if num_of_label_type > 2:
+	if clust['user_id'].is_unique and num_of_label_type > 2:
 		ave = np.mean(clust['coords'].tolist(), axis=0)
 		included_labels[clust_num] = (label_type, ave[0], ave[1])
 	else:
@@ -54,7 +55,7 @@ included = pd.DataFrame(included_labels.values(), columns=['type', 'lat', 'lng']
 included.to_csv('../data/ground_truth.csv', index=False)
 
 # order the labels that we are unsure about by cluster, so they are easier to manually look through.
-problem_labels = label_sample[label_sample.cluster.isin(problem_clusters.keys())]
+problem_labels = label_data[label_data.cluster.isin(problem_clusters.keys())]
 
 # output the labels that we are NOT sure about to another CSV so we can look through them.
 problem_labels.to_csv('../data/problem_labels.csv', index=False)
