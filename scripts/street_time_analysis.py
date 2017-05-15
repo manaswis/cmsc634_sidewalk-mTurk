@@ -4,13 +4,8 @@ import sys
 from haversine import haversine # pip install haversine
 
 # read in data
-f = open('../data/street_length_data.csv')
 names = ["user_id", "street_edge_id", "start_time", "end_time", "lng1", "lat1", "lng2", "lat2"]
-data = np.genfromtxt(f, delimiter=',', names=names, case_sensitive=True, dtype=None)
-f.close()
-
-# convert to pandas dataframe
-street_data = pd.DataFrame(data, columns=data.dtype.names)
+street_data = pd.read_csv('../data/street_length_data.csv', names=names)
 
 # remove duplicate columns
 street_data = street_data.drop_duplicates()

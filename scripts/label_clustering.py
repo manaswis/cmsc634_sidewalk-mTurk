@@ -3,16 +3,11 @@ import numpy as np
 from haversine import haversine # pip install haversine
 import sys
 from scipy.cluster.hierarchy import linkage, cut_tree, dendrogram
-
 from collections import Counter
 
 # read in data
-f = open('../data/label_data.csv')
 names = ["lng", "lat", "label_type", "user_id"]
-data = np.genfromtxt(f, delimiter=',', names=names, case_sensitive=True, dtype=None)
-f.close()
-
-label_data = pd.DataFrame(data, columns=data.dtype.names)
+label_data = pd.read_csv('../data/label_data.csv', names=names)
 
 # remove weird entries with longitude values on the order of 10^14
 label_data = label_data.drop(label_data[label_data.lng > 360].index)
