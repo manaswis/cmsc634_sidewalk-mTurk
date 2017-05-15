@@ -9,8 +9,10 @@ from collections import Counter
 names = ["lng", "lat", "label_type", "user_id"]
 label_data = pd.read_csv('../data/label_data.csv', names=names)
 
-# remove weird entries with longitude values on the order of 10^14
-label_data = label_data.drop(label_data[label_data.lng > 360].index)
+# remove weird entries with longitude values (on the order of 10^14)
+if sum(label_data.lng > 360) > 0:
+	print 'There are %d invalid longitude values, removing those entries.' % sum(label_data.lng > 360)
+	label_data = label_data.drop(label_data[label_data.lng > 360].index)
 
 # put lat-lng in a tuple so it plays nice w/ haversine function
 label_data['coords'] = label_data.apply(lambda x: (x.lat, x.lng), axis = 1)
@@ -50,6 +52,12 @@ for clust_num, clust in clusters:
 # output the labels that we are sure are in the ground truth as a csv
 included = pd.DataFrame(included_labels.values(), columns=['type', 'lat', 'lng'])
 included.to_csv('../data/ground_truth.csv', index=False)
+
+# order the labels that we are unsure about by cluster, so they are easier to manually look through.
+problem_labels = label_sample[label_sample.cluster.isin(problem_clusters.keys())]
+
+# output the labels that we are NOT sure about to another CSV so we can look through them.
+problem_labels.to_csv('../data/problem_labels.csv', index=False)
 
 sys.exit()
 
