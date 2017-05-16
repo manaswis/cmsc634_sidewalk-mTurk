@@ -82,7 +82,7 @@ for clust_num, clust in clusters:
 	else:
 		problem_clusters[clust_num] = clust.index
 
-# output the labels form majority vote as a csv
+# output the labels from majority vote as a csv
 included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
 if data == GROUND_TRUTH:
 	included.to_csv('../data/ground_truth-part1.csv', index=False)
