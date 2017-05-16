@@ -27,13 +27,22 @@ else:
 		exit()
 
 # read in data
-names = ['lng', 'lat', 'label_type', 'user_id']
-#names = ['lng', 'lat', 'label_type', 'user_id', 'asmt_id', 'turker_id', 'route_id']
 if data == GROUND_TRUTH:
+	names = ['lng', 'lat', 'label_type', 'asmt_id', 'turker_id', 'route_id']
+	included_turkers = []
+	included_routes = []
 	label_data = pd.read_csv('../data/labels-ground_truth.csv', names=names)
+	label_data = label_data[label_data.turker_id.isin(included_turkers)]
+	label_data = label_data[label_data.route_id.isin(included_routes)]
 elif data == TURKER:
+	names = ['lng', 'lat', 'label_type', 'asmt_id', 'turker_id', 'route_id']
+	included_turkers = []
+	included_routes = []
 	label_data = pd.read_csv('../data/labels-turker.csv', names=names)
+	label_data = label_data[label_data.turker_id.isin(included_turkers)]
+	label_data = label_data[label_data.route_id.isin(included_routes)]
 elif data == TEST:
+	names = ['lng', 'lat', 'label_type', 'user_id']
 	label_data = pd.read_csv('../data/labels-test.csv', names=names)
 
 # remove other, occlusion, and no sidewalk label types to make analysis for the class project easier
