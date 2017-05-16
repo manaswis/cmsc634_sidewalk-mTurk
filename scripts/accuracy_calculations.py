@@ -3,14 +3,15 @@ import numpy as np
 from haversine import haversine # pip install haversine
 import sys
 from hopcroftkarp import HopcroftKarp # easy_install hopcroftkarp
-from ggplot import *
+import matplotlib.pyplot as plt
+#from ggplot import *
 
 # read in ground truth
-ground_truth = pd.read_csv('../data/ground_truth-final.csv')
+#ground_truth = pd.read_csv('../data/ground_truth-final.csv')
 # read in turker labels
-turker_labels = pd.read_csv('../data/turker-final.csv')
-#ground_truth = pd.read_csv('../data/test-final.csv')
-#turker_labels = pd.read_csv('../data/test-final.csv')
+#turker_labels = pd.read_csv('../data/turker-final.csv')
+ground_truth = pd.read_csv('../data/test-final.csv')
+turker_labels = pd.read_csv('../data/test-final.csv')
 
 # put lat-lng in a tuple so it plays nice w/ haversine function
 ground_truth['coords'] = ground_truth.apply(lambda x: (x.lat, x.lng), axis = 1)
@@ -98,7 +99,7 @@ f_measure_multi = 2.0 * precision_multi * recall_multi / (precision_multi + reca
 class_accuracies_df = pd.DataFrame.from_dict(class_accuracies, orient='index')
 class_accuracies_df['label_type'] = pd.Series(class_accuracies_df.index, index=class_accuracies_df.index).astype('category')
 
-class_accuracies_df.plot(kind='bar',x='label_type',y='f')
+class_accuracies_df.plot(kind='bar',x='label_type')
 plt.show()
 
 sys.exit()
