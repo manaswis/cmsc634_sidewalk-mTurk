@@ -13,7 +13,7 @@ turker_labels = pd.read_csv('../data/turker-final.csv')
 ground_truth['coords'] = ground_truth.apply(lambda x: (x.lat, x.lng), axis = 1)
 turker_labels['coords'] = turker_labels.apply(lambda x: (x.lat, x.lng), axis = 1)
 
-# 
+# add identifiers to the labels to use when matching them
 ground_truth['id'] = 'g' + ground_truth.index.astype(str)
 turker_labels['id'] = 't' + turker_labels.index.astype(str)
 
@@ -30,6 +30,26 @@ for row in ground_truth.iterrows():
 # compute maximum matching
 binary_matching = HopcroftKarp(binary_graph).maximum_matching()
 
+def precision(true_pos, false_pos):
+	if true_pos > 0 or false_pos > 0:
+		return true_pos / (1.0 * true_pos + false_pos)
+	else:
+		return float('NaN')
+
+def recall(true_pos, false_neg):
+	if true_pos > 0 or false_pos > 0:
+		return true_pos / (1.0 * true_pos + false_neg)
+	else:
+		return float('NaN')
+
+def f_measure(true_pos, false_pos, false_neg):
+	P = precision(true_pos, false_pos)
+	R = recall(true_pos, false_neg)
+	if P > 0 or R > 0:
+		return 2 * P * R / (P + R)
+	else:
+		return float('NaN')
+
 # calculate precision, recall, and f-measure
 true_positive_binary = len(binary_matching) / 2 # number of matches
 false_positive_binary = len(turker_labels) - true_positive_binary # unmatched turker labels
@@ -37,7 +57,7 @@ false_negative_binary = len(ground_truth) - true_positive_binary # unmatched gro
 
 precision_binary = true_positive_binary / (1.0*true_positive_binary + false_positive_binary)
 recall_binary = true_positive_binary / (1.0*true_positive_binary + false_negative_binary)
-f_measure_binary = precision_binary * recall_binary / (precision_binary + recall_binary)
+f_measure_binary = 2 * precision_binary * recall_binary / (precision_binary + recall_binary)
 
 
 # multiclass: for every ground truth label, find which turker labels have the same label type and
@@ -54,9 +74,23 @@ true_positive_multi = len(multi_matching) / 2 # number of matches
 false_positive_multi = len(turker_labels) - true_positive_multi # unmatched turker labels
 false_negative_multi = len(ground_truth) - true_positive_multi # unmatched ground truth labels
 
+# calculate accuracies in the different classes
+class_accuracies = {}
+label_types = ['CurbRamp', 'SurfaceProblem', 'Obstacle', 'NoCurbRamp']
+for label_type in label_types:
+	gt_this_label = ground_truth[ground_truth.type == label_type]
+	turk_this_label = turker_labels[turker_labels.type == label_type]
+	true_pos = sum(gt_this_label.id.isin(multi_matching.keys()))
+	false_pos = len(turk_this_label) - true_pos
+	false_neg = len(gt_this_label) - true_pos
+	class_accuracies[label_type] = {'p': precision(true_pos, false_pos),
+									'r': recall(true_pos, false_pos),
+									'f': f_measure(true_pos, false_pos, false_neg)}
+
+
 precision_multi = true_positive_multi / (1.0*true_positive_multi + false_positive_multi)
 recall_multi = true_positive_multi / (1.0*true_positive_multi + false_negative_multi)
-f_measure_multi = precision_multi * recall_multi / (precision_multi + recall_multi)
+f_measure_multi = 2.0 * precision_multi * recall_multi / (precision_multi + recall_multi)
 
 
 sys.exit()
