@@ -5,7 +5,7 @@ import sys
 from hopcroftkarp import HopcroftKarp # easy_install hopcroftkarp
 
 # read in ground truth
-ground_truth = pd.read_csv('../data/ground_truth-part1.csv')
+ground_truth = pd.read_csv('../data/ground_truth-final.csv')
 # read in turker labels
 turker_labels = pd.read_csv('../data/turker-final.csv')
 
