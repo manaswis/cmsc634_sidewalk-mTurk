@@ -1,0 +1,7 @@
+# This terminal command will query the sidewalkturk database and output the asmts.csv file in your
+# current dir, copy into cmsc634_sidewalk-mTurk/data.
+# Columns in the CSV: amt_assignment_id, assignment_id, turker_id, hit_id, assignmnet_start, and
+#                     assignment_end; all from amt_assignment table.
+# Only completed assignments are included.
+
+psql -d sidewalkturk -t -A -F"," -c "SELECT sidewalk.amt_assignment.amt_assignment_id, sidewalk.amt_assignment.assignment_id, sidewalk.amt_assignment.turker_id, sidewalk.amt_assignment.hit_id, sidewalk.amt_assignment.assignment_start, sidewalk.amt_assignment.assignment_end FROM sidewalk.amt_assignment WHERE sidewalk.amt_assignment.completed = true" > asmts.csv
