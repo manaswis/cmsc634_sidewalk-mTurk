@@ -23,7 +23,7 @@ else:
 		exit()
 
 # read in data
-names = ['lng', 'lat', 'label_type', 'asmt_id', 'turker_id', 'route_id', 'hit_id', 'pano_id']
+names = ['lng','lat','label_type','asmt_id','turker_id','route_id','hit_id','pano_id','completed']
 label_data = pd.read_csv('../data/mturk_labels.csv', names=names)
 
 # subset data to remove onboarding pano ids
@@ -32,25 +32,30 @@ label_data = label_data[~label_data.pano_id.isin(onboarding_pano_ids)]
 
 # more subsetting...
 if data == GROUND_TRUTH:
-	# subset for the three researchers, on the 9 routes from the experiment, & remove 2 duplicates
+	# subset for the three researchers, on the 9 routes from the experiment, removing 2 duplicates,
+	# and only including instances where we completed the route
 	included_turkers = ['A2WCCAZBCSIW0R','APQS1PRMDXAFH','A2PWQI6I9D3S6D']
 	included_routes = [55, 164, 220, 253, 342, 38, 460, 441, 411]
 	excluded_asmt_ids = ['3SBEHTYCWO6AO254M4I2RZCIGBOIYK', '3P4MQ7TPPYF4OMYN62C1X1A40CMBBP ']
 	label_data = label_data[label_data.turker_id.isin(included_turkers)]
 	label_data = label_data[label_data.route_id.isin(included_routes)]
 	label_data = label_data[~label_data.asmt_id.isin(excluded_asmt_ids)]
+	label_data = label_data[label_data.completed == 't']
 elif data == TURKER:
+	# subset for the exact assignment IDs, as provided by results from Amazon
+	amazon_results = pd.read_csv('../data/results_16-05-2017_22:27:41.csv')
+	label_data = label_data[label_data.asmt_id.isin(amazon_results.AssignmentId)]
 	# subset for labels from the 9 HITs in the experiment
-	included_hit_ids = ['3JVP4ZJHDQVB4NBPOU71456F3LMI01',
-						'3Z33IC0JC1PYMNJ2NXPDC5X2ERC9V1',
-						'3XUSYT70IU4UWCV3WG6QD8Q2BGED0U',
-						'3HFWPF5AKAMWFTDICTJYA5A9FV8S3Y',
-						'367O8HRHKHBHXPWMC7OHKA2FTV4S4J',
-						'32FESTC2NIT07615URPZI9WR656UCE',
-						'3UEDKCTP9WTGST1X9WDMW0VF33HK7E',
-						'3NCN4N1H1HK42BPQJQHITUYFGODNB8',
-						'3YZ7A3YHR6WZT80MQC7RP28TTRZS5O']
-	label_data = label_data[label_data.hit_id.isin(included_hit_ids)]
+	# included_hit_ids = ['3JVP4ZJHDQVB4NBPOU71456F3LMI01',
+	# 					'3Z33IC0JC1PYMNJ2NXPDC5X2ERC9V1',
+	# 					'3XUSYT70IU4UWCV3WG6QD8Q2BGED0U',
+	# 					'3HFWPF5AKAMWFTDICTJYA5A9FV8S3Y',
+	# 					'367O8HRHKHBHXPWMC7OHKA2FTV4S4J',
+	# 					'32FESTC2NIT07615URPZI9WR656UCE',
+	# 					'3UEDKCTP9WTGST1X9WDMW0VF33HK7E',
+	# 					'3NCN4N1H1HK42BPQJQHITUYFGODNB8',
+	# 					'3YZ7A3YHR6WZT80MQC7RP28TTRZS5O']
+	# label_data = label_data[label_data.hit_id.isin(included_hit_ids)]
 
 # remove other, occlusion, and no sidewalk label types to make analysis for the class project easier
 included_types = ['CurbRamp', 'SurfaceProblem', 'Obstacle', 'NoCurbRamp']
