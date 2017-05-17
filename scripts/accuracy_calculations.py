@@ -7,11 +7,11 @@ import matplotlib.pyplot as plt
 #from ggplot import *
 
 # read in ground truth
-#ground_truth = pd.read_csv('../data/ground_truth-final.csv')
+ground_truth = pd.read_csv('../data/ground_truth-final.csv')
 # read in turker labels
-#turker_labels = pd.read_csv('../data/turker-final.csv')
-ground_truth = pd.read_csv('../data/test-final.csv')
-turker_labels = pd.read_csv('../data/test-final.csv')
+turker_labels = pd.read_csv('../data/turker-final.csv')
+# ground_truth = pd.read_csv('../data/test-final.csv')
+# turker_labels = pd.read_csv('../data/test-final.csv')
 
 # put lat-lng in a tuple so it plays nice w/ haversine function
 ground_truth['coords'] = ground_truth.apply(lambda x: (x.lat, x.lng), axis = 1)
@@ -41,7 +41,7 @@ def precision(true_pos, false_pos):
 		return float('NaN')
 
 def recall(true_pos, false_neg):
-	if true_pos > 0 or false_pos > 0:
+	if true_pos > 0 or false_neg > 0:
 		return true_pos / (1.0 * true_pos + false_neg)
 	else:
 		return float('NaN')
@@ -62,6 +62,9 @@ false_negative_binary = len(ground_truth) - true_positive_binary # unmatched gro
 precision_binary = true_positive_binary / (1.0*true_positive_binary + false_positive_binary)
 recall_binary = true_positive_binary / (1.0*true_positive_binary + false_negative_binary)
 f_measure_binary = 2 * precision_binary * recall_binary / (precision_binary + recall_binary)
+print precision_binary
+print recall_binary
+print f_measure_binary
 
 
 # multiclass: for every ground truth label, find which turker labels have the same label type and
@@ -88,17 +91,22 @@ for label_type in label_types:
 	false_pos = len(turk_this_label) - true_pos
 	false_neg = len(gt_this_label) - true_pos
 	class_accuracies[label_type] = {'p': precision(true_pos, false_pos),
-									'r': recall(true_pos, false_pos),
+									'r': recall(true_pos, false_neg),
 									'f': f_measure(true_pos, false_pos, false_neg)}
 
 
 precision_multi = true_positive_multi / (1.0*true_positive_multi + false_positive_multi)
 recall_multi = true_positive_multi / (1.0*true_positive_multi + false_negative_multi)
 f_measure_multi = 2.0 * precision_multi * recall_multi / (precision_multi + recall_multi)
+print precision_multi
+print recall_multi
+print f_measure_multi
 
 class_accuracies_df = pd.DataFrame.from_dict(class_accuracies, orient='index')
 class_accuracies_df['label_type'] = pd.Series(class_accuracies_df.index, index=class_accuracies_df.index).astype('category')
+print class_accuracies_df
 
+# plot the accuracies by class as a bar chart
 class_accuracies_df.plot(kind='bar',x='label_type')
 plt.show()
 
