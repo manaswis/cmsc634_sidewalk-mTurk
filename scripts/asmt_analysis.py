@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 
 # read in data
-names = ['amt_asmt_id','asmt_id','turker_id','hit_id','asmt_start','asmt_end']
-asmt_data = pd.read_csv('../data/asmts.csv', names=names)
+asmt_data = pd.read_csv('../data/results_16-05-2017_22:27:41.csv')
 
 # subset for only the 9 HITs from our experiment
 included_hit_ids = ['3JVP4ZJHDQVB4NBPOU71456F3LMI01',
@@ -15,23 +14,23 @@ included_hit_ids = ['3JVP4ZJHDQVB4NBPOU71456F3LMI01',
 					'3UEDKCTP9WTGST1X9WDMW0VF33HK7E',
 					'3NCN4N1H1HK42BPQJQHITUYFGODNB8',
 					'3YZ7A3YHR6WZT80MQC7RP28TTRZS5O']
-asmt_data = asmt_data[asmt_data.hit_id.isin(included_hit_ids)]
+asmt_data = asmt_data[asmt_data.HITId.isin(included_hit_ids)]
 
 print 'Number of assignments per HIT:'
-print asmt_data.groupby('hit_id').apply(lambda x: len(x))
+print asmt_data.groupby('HITId').apply(lambda x: len(x))
 
 # correctly format start and end time from strings and compute time to complete each assignment
 #pd.options.mode.chained_assignment = None # removes warning about assigning to copy of a slice
-asmt_data['asmt_start'] = pd.to_datetime(asmt_data['asmt_start'], format='%Y-%m-%d %H:%M:%S')
-asmt_data['asmt_end'] = pd.to_datetime(asmt_data['asmt_end'], format='%Y-%m-%d %H:%M:%S')
-asmt_data['duration'] = asmt_data['asmt_end'] - asmt_data['asmt_start']
+asmt_data['AcceptTime'] = pd.to_datetime(asmt_data['AcceptTime'], format='%Y-%m-%d %H:%M:%S')
+asmt_data['SubmitTime'] = pd.to_datetime(asmt_data['SubmitTime'], format='%Y-%m-%d %H:%M:%S')
+asmt_data['duration'] = asmt_data['SubmitTime'] - asmt_data['AcceptTime']
 asmt_data['minutes'] = asmt_data.duration / pd.to_timedelta(1, 'm')
 #pd.options.mode.chained_assignment = 'warn'
 
 # print out some summary statistics
 print 'mean time to complete: %.2f minutes' % asmt_data.minutes.mean()
 print 'median time to complete: %.2f minutes' % asmt_data.minutes.median()
-print 'last HIT finished at: ' + str(asmt_data.asmt_end.max())
+print 'last HIT finished at: ' + str(asmt_data.SubmitTime.max())
 
 # plot histogram of completion times using ggplot
 from ggplot import *
@@ -44,5 +43,5 @@ plot.show()
 import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.style.use('ggplot')
-asmt_data.minutes.plot(kind='hist', legend=False, title='Turker HIT Completion Times', yticks=range(0,22,3),bins=13,xlim=[0,30])
+asmt_data.minutes.plot(kind='hist', legend=False, title='Turker HIT Completion Times')
 plt.show()
