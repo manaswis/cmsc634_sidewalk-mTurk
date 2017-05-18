@@ -3,6 +3,7 @@ import numpy as np
 from haversine import haversine # pip install haversine
 import sys
 from scipy.cluster.hierarchy import linkage, fcluster, cut_tree, dendrogram
+from scipy.spatial.distance import pdist 
 from collections import Counter
 
 GROUND_TRUTH = 1
@@ -81,8 +82,8 @@ label_data['coords'] = label_data.apply(lambda x: (x.lat, x.lng), axis = 1)
 label_data['id'] =  label_data.index.values
 
 # create distance matrix between all pairs of labels
-haver_vec = np.vectorize(haversine, otypes=[np.float64])
-dist_matrix = label_data.groupby('id').apply(lambda x: pd.Series(haver_vec(label_data.coords, x.coords)))
+haver_vec = np.array(label_data[['lat','lng']].as_matrix())
+dist_matrix = pdist(haver_vec,lambda x,y: haversine(x,y))
 
 # cluster based on distance and maybe label_type
 label_link = linkage(dist_matrix, method='complete')
@@ -90,6 +91,7 @@ label_link = linkage(dist_matrix, method='complete')
 # cuts tree so that only labels less than 3 m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
 label_data['cluster'] = fcluster(label_link, t=0.003, criterion='distance')
+print pd.DataFrame(pd.DataFrame(label_data.groupby('cluster').size().rename('points_count')).groupby('points_count').size().rename('points_count_frequency'))
 
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
 # of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
