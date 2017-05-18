@@ -18,7 +18,7 @@ else:
 		MAJORITY_THRESHOLD = 2
 	elif sys.argv[1] in ['turker', 'turk', 't']:
 		data = TURKER
-		MAJORITY_THRESHOLD = 3
+		MAJORITY_THRESHOLD = 5
 	else:
 		print 'Try passing \'gt\' for ground truth labels or \'t\' for turker labels'
 		exit()
@@ -90,8 +90,8 @@ label_link = linkage(dist_matrix, method='complete')
 
 # cuts tree so that only labels less than 3 m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
-label_data['cluster'] = fcluster(label_link, t=0.003, criterion='distance')
-print pd.DataFrame(pd.DataFrame(label_data.groupby('cluster').size().rename('points_count')).groupby('points_count').size().rename('points_count_frequency'))
+label_data['cluster'] = fcluster(label_link, t=0.005, criterion='distance')
+#print pd.DataFrame(pd.DataFrame(label_data.groupby('cluster').size().rename('points_count')).groupby('points_count').size().rename('points_count_frequency'))
 
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
 # of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
@@ -115,10 +115,14 @@ for clust_num, clust in clusters:
 			problem_label_indices.extend(single_type_clust.index)
 print 'total duplicates: ' + str(total_dups)
 
+print 'Total agreements by label type:'
+print pd.DataFrame(included_labels).iloc[:,0].value_counts()
+
 # output the labels from majority vote as a csv
 included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
 if data == GROUND_TRUTH:
 	print 'We agreed on this many labels: ' + str(len(included))
+
 	#included.to_csv('../data/ground_truth-part1.csv', index=False)
 	included.to_csv('../data/ground_truth-final.csv', index=False)
 
