@@ -82,8 +82,8 @@ label_data['coords'] = label_data.apply(lambda x: (x.lat, x.lng), axis = 1)
 label_data['id'] =  label_data.index.values
 
 # create distance matrix between all pairs of labels
-haver_vec = np.array(label_data[['lat','lng']].as_matrix())
-dist_matrix = pdist(haver_vec,lambda x,y: haversine(x,y))
+latlngs = np.array(label_data[['lat','lng']].as_matrix())
+dist_matrix = pdist(latlngs,lambda x,y: haversine(x,y))
 
 # cluster based on distance and maybe label_type
 label_link = linkage(dist_matrix, method='complete')
