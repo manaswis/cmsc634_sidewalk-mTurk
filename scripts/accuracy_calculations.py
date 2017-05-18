@@ -28,7 +28,7 @@ multi_graph = dict(zip(ground_truth.id, [[] for i in range(len(ground_truth))]))
 
 # binary: for every ground truth label, find which turker labels are less than 0.5 meters away
 for row in ground_truth.iterrows():
-	match = turker_labels.apply(lambda x: haversine(x.coords, row[1].coords) < 0.5, axis=1)
+	match = turker_labels.apply(lambda x: haversine(x.coords, row[1].coords) < 0.0015, axis=1)
 	binary_graph[row[1].id].extend(turker_labels.id[match].values)
 
 # compute maximum matching

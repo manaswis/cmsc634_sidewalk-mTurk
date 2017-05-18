@@ -89,7 +89,7 @@ label_link = linkage(dist_matrix, method='complete')
 
 # cuts tree so that only labels less than 0.5m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
-label_data['cluster'] = cut_tree(label_link, height = 1.0)
+label_data['cluster'] = cut_tree(label_link, height = 0.003)
 
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
 # of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
