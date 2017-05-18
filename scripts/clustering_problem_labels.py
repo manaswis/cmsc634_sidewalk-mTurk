@@ -41,22 +41,16 @@ problem_label_indices = [] # list of indices in dataset of labels that need to b
 clusters = label_data.groupby('cluster')
 total_dups = 0
 for clust_num, clust in clusters:
-	# only include one label type per user per cluster
-	no_dups = clust.drop_duplicates(subset=['label_type', 'turker_id'])
-	total_dups += (len(clust) - len(no_dups))
 	#count up the number of each label type in cluster, any with a majority are included
 	for label_type in included_types:
-		single_type_clust = no_dups.drop(no_dups[no_dups.label_type != label_type].index)
-		if len(single_type_clust) >= MAJORITY_THRESHOLD:
-			ave = np.mean(single_type_clust['coords'].tolist(), axis=0) # use ave pos of clusters
+		if len(clust) >= MAJORITY_THRESHOLD:
+			ave = np.mean(clust['coords'].tolist(), axis=0) # use ave pos of clusters
 			included_labels.append((label_type, ave[0], ave[1]))
 			print 'Here is a new cluster:'
-			print single_type_clust[['label_id','turker_id','route_id','pano_id']] #no_dups #clust
+			print clust[['label_id','turker_id','route_id','pano_id']] #no_dups #clust
 			print
 		else:
-			#print single_type_clust.index
-			problem_label_indices.extend(single_type_clust.index)
-#print 'total duplicates: ' + str(total_dups)
+			problem_label_indices.extend(clust.index)
 
 print 'total number of clusters = ' + str(len(included_labels))
 
