@@ -28,7 +28,7 @@ multi_graph = dict(zip(ground_truth.id, [[] for i in range(len(ground_truth))]))
 
 # binary: for every ground truth label, find which turker labels are less than 0.5 meters away
 for row in ground_truth.iterrows():
-	match = turker_labels.apply(lambda x: haversine(x.coords, row[1].coords) < 0.0015, axis=1)
+	match = turker_labels.apply(lambda x: haversine(x.coords, row[1].coords) < 0.0025, axis=1)
 	binary_graph[row[1].id].extend(turker_labels.id[match].values)
 
 # compute maximum matching
@@ -59,18 +59,19 @@ true_positive_binary = len(binary_matching) / 2 # number of matches
 false_positive_binary = len(turker_labels) - true_positive_binary # unmatched turker labels
 false_negative_binary = len(ground_truth) - true_positive_binary # unmatched ground truth labels
 
-precision_binary = true_positive_binary / (1.0*true_positive_binary + false_positive_binary)
-recall_binary = true_positive_binary / (1.0*true_positive_binary + false_negative_binary)
-f_measure_binary = 2 * precision_binary * recall_binary / (precision_binary + recall_binary)
-print precision_binary
-print recall_binary
-print f_measure_binary
+
+precision_binary = precision(true_positive_binary, false_positive_binary)
+recall_binary = recall(true_positive_binary, false_negative_binary)
+f_measure_binary = f_measure(true_positive_binary, false_positive_binary, false_negative_binary)
+print 'Binary precision: ' + str(precision_binary)
+print 'Binary recall: ' + str(recall_binary)
+print 'Binary f-score: ' + str(f_measure_binary)
 
 
 # multiclass: for every ground truth label, find which turker labels have the same label type and
 # are less than 0.5 meters away
 for row in ground_truth.iterrows():
-	match = turker_labels.apply(lambda x: x.type == row[1].type and haversine(x.coords, row[1].coords) < 0.5, axis=1)
+	match = turker_labels.apply(lambda x: x.type == row[1].type and haversine(x.coords, row[1].coords) < 0.0025, axis=1)
 	multi_graph[row[1].id].extend(turker_labels.id[match].values)
 
 # compute maximum matching
@@ -81,7 +82,15 @@ true_positive_multi = len(multi_matching) / 2 # number of matches
 false_positive_multi = len(turker_labels) - true_positive_multi # unmatched turker labels
 false_negative_multi = len(ground_truth) - true_positive_multi # unmatched ground truth labels
 
-# calculate accuracies in the different classes
+# calculate binary accuracy
+precision_multi = precision(true_positive_multi, false_positive_multi)
+recall_multi = recall(true_positive_multi, false_negative_multi)
+f_measure_multi = f_measure(true_positive_multi, false_positive_multi, false_negative_multi)
+print 'Multi precision: ' + str(precision_multi)
+print 'Multi recall: ' + str(recall_multi)
+print 'Multi f-score: ' + str(f_measure_multi)
+
+# calculate accuracies by label type
 class_accuracies = {}
 label_types = ['CurbRamp', 'SurfaceProblem', 'Obstacle', 'NoCurbRamp']
 for label_type in label_types:
@@ -90,17 +99,13 @@ for label_type in label_types:
 	true_pos = sum(gt_this_label.id.isin(multi_matching.keys()))
 	false_pos = len(turk_this_label) - true_pos
 	false_neg = len(gt_this_label) - true_pos
-	class_accuracies[label_type] = {'p': precision(true_pos, false_pos),
-									'r': recall(true_pos, false_neg),
-									'f': f_measure(true_pos, false_pos, false_neg)}
-
-
-precision_multi = true_positive_multi / (1.0*true_positive_multi + false_positive_multi)
-recall_multi = true_positive_multi / (1.0*true_positive_multi + false_negative_multi)
-f_measure_multi = 2.0 * precision_multi * recall_multi / (precision_multi + recall_multi)
-print precision_multi
-print recall_multi
-print f_measure_multi
+	# print label_type
+	# print true_pos
+	# print false_pos
+	# print false_neg
+	class_accuracies[label_type] = {'precision': precision(true_pos, false_pos),
+									'recall': recall(true_pos, false_neg),
+									'f-score': f_measure(true_pos, false_pos, false_neg)}
 
 class_accuracies_df = pd.DataFrame.from_dict(class_accuracies, orient='index')
 class_accuracies_df['label_type'] = pd.Series(class_accuracies_df.index, index=class_accuracies_df.index).astype('category')
