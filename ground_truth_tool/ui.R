@@ -10,7 +10,7 @@ shinyUI(fluidPage(
   sidebarLayout(
     mainPanel(
       uiOutput(outputId="sv"),
-      google_mapOutput("myMap"),
+      google_mapOutput("myMap", height=600),
       actionButton("test.button","click me")
     ),
     sidebarPanel("This is where words will go")
