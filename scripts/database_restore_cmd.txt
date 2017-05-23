@@ -1,0 +1,3 @@
+# this is the command to run to restore the database from the binary dump
+
+pg_restore -C -d postgres 2017May16_1002AM
