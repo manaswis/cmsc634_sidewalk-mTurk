@@ -24,7 +24,7 @@ else:
 		exit()
 
 # read in data
-names = ['lng','lat','label_type', 'label_id','asmt_id','turker_id','route_id','hit_id','pano_id','completed']
+names = ['lng','lat','label_type', 'label_id','asmt_id','turker_id','route_id','hit_id','pano_id','canvas_x','canvas_y','heading','pitch','completed']
 label_data = pd.read_csv('../data/mturk_labels.csv', names=names)
 
 # subset data to remove onboarding pano ids
