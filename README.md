@@ -1,2 +1,2 @@
-# cmsc634_sidewalk-mTurk
-Repository to hold all the scripts used to run mTurk experiments for Project Sidewalk and analyze the data
+# Project Sidewalk - CHI 2018
+This repository will track all the tasks we want to complete for the CHI 2018 submission.
