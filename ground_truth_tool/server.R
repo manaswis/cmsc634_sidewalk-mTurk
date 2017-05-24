@@ -5,14 +5,22 @@ library(googleway)
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
   setwd("~/Documents/cmsc634_sidewalk-mTurk/")
-  # TODO read problem labels data frame
-  classes <- c('numeric', 'numeric', 'factor', 'character',
+  # read problem labels data frame
+  classes <- c('numeric', 'numeric', 'character', 'character',
                replicate(5, 'factor'), replicate(4, 'numeric'), 'factor')
   names <- c('lng', 'lat', 'label.type', 'label.id', 'asmt.id', 'turker.id',
              'route.id', 'hit.id', 'pano.id', 'canvas.x', 'canvas.y',
              'heading', 'pitch','completed')
-  label.data <- read.csv("data/mturk_labels.csv", colClasses = classes, col.names = names)
+  label.data <- read.csv("data/mturk_labels.csv", colClasses = classes,
+                         col.names = names)
   # TODO add drag column to data frame
+  
+  # associate label image names with label type strings
+  icon.imgs <- c("Cursor_Other.png", "Cursor_Other.png", "Cursor_CurbRamp.png",
+                 "Cursor_NoCurbRamp.png", "Cursor_Obstacle.png",
+                 "Cursor_SurfaceProblem.png")
+  names(icon.imgs) <- c("Other", "NoSidewalk", "CurbRamp", "NoCurbRamp",
+                        "Obstacle", "SurfaceProblem")
   i=1
   
   # render google map
@@ -45,20 +53,20 @@ shinyServer(function(input, output) {
   #      are brought up when a button is clicked
   observeEvent(input$test.button, {
     i <<- i + 1
-    print(i)
     # get new GSV image
     sv <- google_streetview(panorama_id = as.character(label.data[i,'pano.id']),
                             key = map.key, response_check = TRUE,
                             size = c(720,480), output="html",
-                            heading=label.data[i,'heading'], pitch=label.data[i,'pitch'])
+                            heading=label.data[i,'heading'],
+                            pitch=label.data[i,'pitch'])
     # render new GSV image with a label on top
     style.str <- paste0("position:absolute;left:", label.data[i,'canvas.x'],
                         "px;top:", label.data[i,'canvas.y'], "px;")
     output$sv <- renderUI({
       tags$img(src=sv,width="720",height="480px",
                style="position:relative;left:0px;top:0px;",
-               tags$img(src="Cursor_CurbRamp.png",width="30px",height="30px",
-                        style=style.str)
+               tags$img(src=icon.imgs[label.data[i,"label.type"]], width="30px",
+                        height="30px", style=style.str)
                )
       })
     })
