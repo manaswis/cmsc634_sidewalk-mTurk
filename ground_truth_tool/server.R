@@ -22,6 +22,7 @@ shinyServer(function(input, output) {
                  "Cursor_Obstacle.png", "Cursor_SurfaceProblem.png")
   names(icon.imgs) <- c("Other", "NoSidewalk", "Occlusion", "CurbRamp", "NoCurbRamp",
                         "Obstacle", "SurfaceProblem")
+  label.data$icons <- icon.imgs[label.data$label.type]
   i=1
   
   # render google map
@@ -29,7 +30,7 @@ shinyServer(function(input, output) {
   gmap <- google_map(key = map.key,
                      location = c(label.data[i,'lat'],label.data[i,'lng']),
                      zoom=12, search_box = T) %>%
-    add_markers(data=label.data, id="label.id", title="label.type", info_window="label.type")#, draggable="drag")
+    add_markers(data=label.data, id="label.id", title="label.type", info_window="label.type", marker_icon="icons")#, draggable="drag")
   output$myMap <- renderGoogle_map({
     gmap
   })
