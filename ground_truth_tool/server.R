@@ -25,6 +25,7 @@ shinyServer(function(input, output) {
   names(icon.imgs) <- c("Other", "NoSidewalk", "Occlusion", "CurbRamp", "NoCurbRamp",
                         "Obstacle", "SurfaceProblem")
   label.data$icons <- icon.imgs[label.data$label.type]
+  label.data$drag <- TRUE
   i=1
   
   # render google map
@@ -32,7 +33,9 @@ shinyServer(function(input, output) {
   gmap <- google_map(key = map.key,
                      location = c(label.data[i,'lat'],label.data[i,'lng']),
                      zoom=12, search_box = T) %>%
-    add_markers(data=label.data, id="label.id", title="label.type", info_window="label.type", marker_icon="icons")#, draggable="drag")
+    add_markers(data=label.data[label.data$cluster == label.data[i,'cluster'],],
+                id="label.id", title="label.type", info_window="label.type",
+                marker_icon="icons", draggable="drag")
   output$myMap <- renderGoogle_map({
     gmap
   })
@@ -73,5 +76,14 @@ shinyServer(function(input, output) {
                         height="30px", style=style.str)
                )
       })
+    # update google map to show current cluster, if cluster has changed
+    if (label.data[i,'cluster'] != label.data[i-1,'cluster']) {
+      google_map_update(map_id = 'myMap') %>%
+        clear_markers()
+      google_map_update(map_id = 'myMap') %>%
+        add_markers(data=label.data[label.data$cluster == label.data[i,'cluster'],],
+                    id="label.id", title="label.type", info_window="label.type",
+                    marker_icon="icons", draggable="drag")
+    }
     })
   })

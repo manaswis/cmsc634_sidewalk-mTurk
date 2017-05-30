@@ -6,7 +6,7 @@ from scipy.cluster.hierarchy import linkage, fcluster, cut_tree, dendrogram
 from scipy.spatial.distance import pdist
 from collections import Counter
 
-CLUSTER_THRESHOLD = 0.025 # cluster all labels within 25 meter diameter
+CLUSTER_THRESHOLD = 0.020 # cluster all labels within 15 meter diameter
 
 
 # read in data
@@ -34,9 +34,9 @@ dist_matrix = pdist(latlngs,lambda x,y: haversine(x,y))
 # cluster based on distance and maybe label_type
 label_link = linkage(dist_matrix, method='complete')
 
-# cuts tree so that only labels less than 0.5m apart are clustered, adds a col
+# cuts tree so that only labels less than 20m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
-label_data['cluster'] = cut_tree(label_link, height = 0.025)
+label_data['cluster'] = fcluster(label_link, t=CLUSTER_THRESHOLD, criterion='distance')
 
 # sort by cluster ID
 label_data = label_data.sort_values('cluster')
