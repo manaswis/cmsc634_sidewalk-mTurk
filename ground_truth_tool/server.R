@@ -8,11 +8,13 @@ shinyServer(function(input, output) {
   setwd("~/Documents/sidewalk-chi2018/")
   # read problem labels data frame
   classes <- c('numeric', 'numeric', 'character', 'character',
-               replicate(5, 'factor'), replicate(4, 'numeric'), 'factor')
+               replicate(5, 'factor'), replicate(4, 'numeric'), 'factor',
+               'character', 'numeric', 'factor')
   names <- c('lng', 'lat', 'label.type', 'label.id', 'asmt.id', 'turker.id',
              'route.id', 'hit.id', 'pano.id', 'canvas.x', 'canvas.y',
-             'heading', 'pitch','completed')
-  label.data <- read.csv("data/mturk_labels.csv", colClasses = classes,
+             'heading', 'pitch', 'completed', 'coords', 'id', 'cluster')
+  label.data <- read.csv("data/ground_truth-problem_labels.csv",
+                         colClasses = classes,
                          col.names = names)
   # TODO add drag column to data frame
   
