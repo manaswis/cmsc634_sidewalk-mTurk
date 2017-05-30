@@ -13,7 +13,7 @@ shinyServer(function(input, output) {
   names <- c('lng', 'lat', 'label.type', 'label.id', 'asmt.id', 'turker.id',
              'route.id', 'hit.id', 'pano.id', 'canvas.x', 'canvas.y',
              'heading', 'pitch', 'completed', 'coords', 'id', 'cluster')
-  label.data <- read.csv("data/ground_truth-problem_labels.csv",
+  label.data <- read.csv("data/ground_truth-problem_labels-clustered.csv",
                          colClasses = classes,
                          col.names = names)
   # TODO add drag column to data frame

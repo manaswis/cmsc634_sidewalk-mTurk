@@ -3,11 +3,12 @@ import numpy as np
 from haversine import haversine # pip install haversine
 import sys
 from scipy.cluster.hierarchy import linkage, fcluster, cut_tree, dendrogram
-from scipy.spatial.distance import pdist 
+from scipy.spatial.distance import pdist
 from collections import Counter
 
 GROUND_TRUTH = 1
 TURKER = 2
+CLUSTER_THRESHOLD = 0.005 # cluster all labels within 5 meter diameter
 
 if len(sys.argv) < 2:
 	print 'Argument needed to specify whether ground truth or turker labels are to be clustered.'
@@ -88,9 +89,9 @@ dist_matrix = pdist(latlngs,lambda x,y: haversine(x,y))
 # cluster based on distance and maybe label_type
 label_link = linkage(dist_matrix, method='complete')
 
-# cuts tree so that only labels less than 3 m apart are clustered, adds a col
+# cuts tree so that only labels less than 5 m apart are clustered, adds a col
 # to dataframe with label for the cluster they are in
-label_data['cluster'] = fcluster(label_link, t=0.005, criterion='distance')
+label_data['cluster'] = fcluster(label_link, t=CLUSTER_THRESHOLD, criterion='distance')
 #print pd.DataFrame(pd.DataFrame(label_data.groupby('cluster').size().rename('points_count')).groupby('points_count').size().rename('points_count_frequency'))
 
 # Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
