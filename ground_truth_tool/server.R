@@ -1,4 +1,5 @@
 library(shiny)
+devtools::install_github("SymbolixAU/googleway")
 library(googleway)
 
 # heading pitch in view/canvas
@@ -16,10 +17,10 @@ shinyServer(function(input, output) {
   # TODO add drag column to data frame
   
   # associate label image names with label type strings
-  icon.imgs <- c("Cursor_Other.png", "Cursor_Other.png", "Cursor_CurbRamp.png",
-                 "Cursor_NoCurbRamp.png", "Cursor_Obstacle.png",
-                 "Cursor_SurfaceProblem.png")
-  names(icon.imgs) <- c("Other", "NoSidewalk", "CurbRamp", "NoCurbRamp",
+  icon.imgs <- c("Cursor_Other.png", "Cursor_Other.png", "Cursor_Other.png",
+                 "Cursor_CurbRamp.png", "Cursor_NoCurbRamp.png",
+                 "Cursor_Obstacle.png", "Cursor_SurfaceProblem.png")
+  names(icon.imgs) <- c("Other", "NoSidewalk", "Occlusion", "CurbRamp", "NoCurbRamp",
                         "Obstacle", "SurfaceProblem")
   i=1
   
