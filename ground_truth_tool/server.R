@@ -5,7 +5,7 @@ library(googleway)
 # heading pitch in view/canvas
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-  setwd("~/Documents/cmsc634_sidewalk-mTurk/")
+  setwd("~/Documents/sidewalk-chi2018/")
   # read problem labels data frame
   classes <- c('numeric', 'numeric', 'character', 'character',
                replicate(5, 'factor'), replicate(4, 'numeric'), 'factor')
