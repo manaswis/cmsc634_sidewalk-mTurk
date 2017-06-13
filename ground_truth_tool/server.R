@@ -1,6 +1,7 @@
 library(shiny)
-devtools::install_github("SymbolixAU/googleway")
+#devtools::install_github("SymbolixAU/googleway")
 library(googleway)
+library(leaflet)
 
 # heading pitch in view/canvas
 # Define server logic required to draw a histogram
@@ -14,9 +15,7 @@ shinyServer(function(input, output) {
              'route.id', 'hit.id', 'pano.id', 'canvas.x', 'canvas.y',
              'heading', 'pitch', 'completed', 'coords', 'id', 'cluster')
   label.data <- read.csv("data/ground_truth-problem_labels-clustered.csv",
-                         colClasses = classes,
-                         col.names = names)
-  # TODO add drag column to data frame
+                         colClasses = classes, col.names = names)
   
   # associate label image names with label type strings
   icon.imgs <- c("Cursor_Other.png", "Cursor_Other.png", "Cursor_Other.png",
@@ -24,20 +23,20 @@ shinyServer(function(input, output) {
                  "Cursor_Obstacle.png", "Cursor_SurfaceProblem.png")
   names(icon.imgs) <- c("Other", "NoSidewalk", "Occlusion", "CurbRamp", "NoCurbRamp",
                         "Obstacle", "SurfaceProblem")
-  label.data$icons <- icon.imgs[label.data$label.type]
+  label.data$icons <- unname(icon.imgs[label.data$label.type])
+  
   label.data$drag <- TRUE
   i=1
+  label.subset <- label.data[label.data$cluster == label.data[i,'cluster'],]
+  leaflet.icons <- icons(label.subset$icons)
   
-  # render google map
+  # render leaflet map
   map.key <- "AIzaSyBoSWFmnDRVTU87KdDJKhTtVU7TuFBpyDc"
-  gmap <- google_map(key = map.key,
-                     location = c(label.data[i,'lat'],label.data[i,'lng']),
-                     zoom=12, search_box = T) %>%
-    add_markers(data=label.data[label.data$cluster == label.data[i,'cluster'],],
-                id="label.id", title="label.type", info_window="label.type",
-                marker_icon="icons", draggable="drag")
-  output$myMap <- renderGoogle_map({
-    gmap
+  output$myMap <- renderLeaflet({
+    leaflet(options = leafletOptions(maxZoom = 19)) %>%
+      addProviderTiles(providers$Thunderforest.Transport) %>%
+      addMarkers(data = label.subset, lng = ~lng, lat = ~lat,
+                 icon = leaflet.icons, label = ~label.id)
   })
   
   # render static google street view image w/ a label on it
@@ -50,8 +49,8 @@ shinyServer(function(input, output) {
   output$sv <- renderUI({
     tags$img(src=sv, width="720", height="480px", # actual SV image
              style="position:relative;left:0px;top:0px;",
-             tags$img(src="Cursor_Other.png",width="30px",height="30px", # label
-                      style=style.str)
+             tags$img(src=icon.imgs[label.data[i,"label.type"]], width="30px",
+                      height="30px", style=style.str)
              )
     })
   
@@ -76,14 +75,21 @@ shinyServer(function(input, output) {
                         height="30px", style=style.str)
                )
       })
-    # update google map to show current cluster, if cluster has changed
+    
+    # update map to show current cluster, if cluster has changed
+    # TODO find a way to somehow highlight the current label being looked at
     if (label.data[i,'cluster'] != label.data[i-1,'cluster']) {
-      google_map_update(map_id = 'myMap') %>%
-        clear_markers()
-      google_map_update(map_id = 'myMap') %>%
-        add_markers(data=label.data[label.data$cluster == label.data[i,'cluster'],],
-                    id="label.id", title="label.type", info_window="label.type",
-                    marker_icon="icons", draggable="drag")
+      output$myMap <- renderLeaflet({
+        label.subset <- label.data[label.data$cluster == label.data[i,'cluster'],]
+        leaflet.icons <- icons(label.subset$icons)
+        leaflet() %>%
+          addProviderTiles(providers$Thunderforest.Transport) %>%
+          setView(lng = (min(label.subset$lng) + max(label.subset$lng)) / 2,
+                  lat = (min(label.subset$lat) + max(label.subset$lat)) / 2,
+                  zoom = 19) %>%
+          addMarkers(data = label.subset, lng = ~lng, lat = ~lat,
+                     icon = leaflet.icons, label = ~label.id)
+      })
     }
     })
   })
