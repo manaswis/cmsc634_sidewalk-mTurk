@@ -174,9 +174,20 @@ def cluster(labels, link, clust_thresh):
 
 	return (curr_type, agreement_count, disagreement_count, total_dups)
 
-cluster(ramp_data, ramp_link, CLUSTER_THRESHOLD)
-cluster(surf_data, surf_link, CLUSTER_THRESHOLD)
-cluster(obs_data, obs_link, CLUSTER_THRESHOLD)
-cluster(noramp_data, noramp_link, CLUSTER_THRESHOLD)
+if VALIDATE:
+	results = []
+	thresholds = [x / 10000.0 for x in range(0, 500, 5)] # 0 to 50m in 0.5m increments
+	for thresh in thresholds:
+		results.append(cluster(ramp_data, ramp_link, thresh))
+		results.append(cluster(surf_data, surf_link, thresh))
+		results.append(cluster(obs_data, obs_link, thresh))
+		results.append(cluster(noramp_data, noramp_link, thresh))
+	results_df = pd.DataFrame(results, columns=['type', 'agreements', 'disagreements', 'dups'])
+	results_df.to_csv('../data/clustering_validation.csv', index=False)
+else:
+	cluster(ramp_data, ramp_link, CLUSTER_THRESHOLD)
+	cluster(surf_data, surf_link, CLUSTER_THRESHOLD)
+	cluster(obs_data, obs_link, CLUSTER_THRESHOLD)
+	cluster(noramp_data, noramp_link, CLUSTER_THRESHOLD)
 
 sys.exit()
