@@ -5,24 +5,32 @@ import sys
 from scipy.cluster.hierarchy import linkage, fcluster, cut_tree, dendrogram
 from scipy.spatial.distance import pdist
 from collections import Counter
+import argparse
 
 GROUND_TRUTH = 1
 TURKER = 2
 CLUSTER_THRESHOLD = 0.005 # cluster all labels within 5 meter diameter
 
-if len(sys.argv) < 2:
-	print 'Argument needed to specify whether ground truth or turker labels are to be clustered.'
-	exit()
+# read in arguments from command line
+parser = argparse.ArgumentParser(description='Takes a set of labels from CSV, and outputs the labels grouped into clusters to a new CSV')
+parser.add_argument('data_source', type=str,
+                    help='Indicate whether to use ground truth (-gt) or turker (-t) data.')
+parser.add_argument('--clust_thresh', type=float, default=0.005,
+                    help='Cluster distance threshold (in meters)')
+parser.add_argument('--debug', action='store_true',
+                    help='Debug mode adds print statements')
+args = parser.parse_args()
+DEBUG = args.debug
+CLUSTER_THRESHOLD = args.clust_thresh
+if args.data_source in ['gt', 'GT', 'ground_truth', 'groundTruth', 'groundtruth', 'g',
+					   '-gt', '-GT', '-ground_truth', '-groundTruth', '-groundtruth', '-g']:
+    data = GROUND_TRUTH
+    MAJORITY_THRESHOLD = 2
+elif args.data_source in ['turker', 'turk', 't', '-turker', '-turk', '-t']:
+	data = TURKER
+	MAJORITY_THRESHOLD = 5
 else:
-	if sys.argv[1] in ['gt', 'GT', 'ground_truth', 'groundTruth', 'groundtruth', 'g']:
-		data = GROUND_TRUTH
-		MAJORITY_THRESHOLD = 2
-	elif sys.argv[1] in ['turker', 'turk', 't']:
-		data = TURKER
-		MAJORITY_THRESHOLD = 5
-	else:
-		print 'Try passing \'gt\' for ground truth labels or \'t\' for turker labels'
-		exit()
+	parser.error('Try passing \'gt\' for ground truth labels or \'t\' for turker labels')
 
 # read in data
 names = ['lng','lat','label_type', 'label_id','asmt_id','turker_id','route_id','hit_id','pano_id','canvas_x','canvas_y','heading','pitch','completed']
@@ -72,11 +80,12 @@ if sum(label_data.lng > 360) > 0:
 	label_data = label_data.drop(label_data[label_data.lng > 360].index)
 
 # print out some useful info
-print 'labels in dataset: ' + str(len(label_data))
-print 'Number of CurbRamp labels: ' + str(sum(label_data.label_type == 'CurbRamp'))
-print 'Number of NoCurbRamp labels: ' + str(sum(label_data.label_type == 'NoCurbRamp'))
-print 'Number of SurfaceProblem labels: ' + str(sum(label_data.label_type == 'SurfaceProblem'))
-print 'Number of Obstacle labels: ' + str(sum(label_data.label_type == 'Obstacle'))
+if DEBUG:
+	print 'labels in dataset: ' + str(len(label_data))
+	print 'Number of CurbRamp labels: ' + str(sum(label_data.label_type == 'CurbRamp'))
+	print 'Number of NoCurbRamp labels: ' + str(sum(label_data.label_type == 'NoCurbRamp'))
+	print 'Number of SurfaceProblem labels: ' + str(sum(label_data.label_type == 'SurfaceProblem'))
+	print 'Number of Obstacle labels: ' + str(sum(label_data.label_type == 'Obstacle'))
 
 # put lat-lng in a tuple so it plays nice w/ haversine function
 label_data['coords'] = label_data.apply(lambda x: (x.lat, x.lng), axis = 1)
@@ -114,28 +123,30 @@ for clust_num, clust in clusters:
 		else:
 			#print single_type_clust.index
 			problem_label_indices.extend(single_type_clust.index)
-print 'total duplicates: ' + str(total_dups)
 
-print 'Total agreements by label type:'
-print pd.DataFrame(included_labels).iloc[:,0].value_counts()
+if DEBUG:
+	print 'total duplicates: ' + str(total_dups)
+	print 'Total agreements by label type:'
+
+if DEBUG: print pd.DataFrame(included_labels).iloc[:,0].value_counts()
 
 # output the labels from majority vote as a csv
 included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
 if data == GROUND_TRUTH:
-	print 'We agreed on this many labels: ' + str(len(included))
+	if DEBUG: print 'We agreed on this many labels: ' + str(len(included))
 
 	#included.to_csv('../data/ground_truth-part1.csv', index=False)
 	included.to_csv('../data/ground_truth-final.csv', index=False)
 
 	# order GT labels that we are unsure about by cluster, so they are easier to manually look through.
 	problem_labels = label_data.loc[problem_label_indices]
-	print 'We have this many labels that we disagreed on: ' + str(len(problem_labels))
+	if DEBUG: print 'We have this many labels that we disagreed on: ' + str(len(problem_labels))
 
 	# output GT labels that we are NOT sure about to another CSV so we can look through them.
 	problem_labels.to_csv('../data/ground_truth-problem_labels.csv', index=False)
 elif data == TURKER:
-	print 'Turkers agreed on this many labels: ' + str(len(included))
-	print 'Turkers have this many labels that they disagreed on: ' + str(len(problem_label_indices))
+	if DEBUG: print 'Turkers agreed on this many labels: ' + str(len(included))
+	if DEBUG: print 'Turkers have this many labels that they disagreed on: ' + str(len(problem_label_indices))
 	included.to_csv('../data/turker-final.csv', index=False)
 
 
