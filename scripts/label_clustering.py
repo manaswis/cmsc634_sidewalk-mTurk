@@ -142,30 +142,37 @@ def cluster(labels, link, clust_thresh):
 			#print no_dups.index
 			problem_label_indices.extend(no_dups.index)
 
-	if DEBUG:
-		print 'total ' + curr_type + ' duplicates: ' + str(total_dups)
-
 	included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
+
+	agreement_count = len(included)
+	disagreement_count = len(problem_label_indices)
 
 	# output the labels from majority vote as a csv
 	if TO_CSV:
 		included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
 		if data == GROUND_TRUTH:
-			if DEBUG: print 'We agreed on this many ' + curr_type + ' labels: ' + str(len(included))
 
 			#included.to_csv('../data/ground_truth-part1.csv', index=False)
 			included.to_csv('../data/ground_truth-' + curr_type + '-final.csv', index=False)
 
 			# order GT labels that we are unsure about by cluster, so they are easier to manually look through.
 			problem_labels = labels.loc[problem_label_indices]
-			if DEBUG: print 'We disagreed on this many ' + curr_type + ' labels: ' + str(len(problem_labels))
 
 			# output GT labels that we are NOT sure about to another CSV so we can look through them.
 			problem_labels.to_csv('../data/ground_truth-problem_labels.csv', index=False)
 		elif data == TURKER:
-			if DEBUG: print 'Turkers agreed on this many ' + curr_type + ' labels: ' + str(len(included))
-			if DEBUG: print 'Turkers disagreed on this many ' + curr_type + ' labels: ' + str(len(problem_label_indices))
 			included.to_csv('../data/turker-' + curr_type + '-final.csv', index=False)
+
+	if DEBUG:
+		print str(curr_type) + ' duplicates: ' + str(total_dups) + '\n'
+		if data == GROUND_TRUTH:
+			print 'We agreed on this many ' + curr_type + ' labels: ' + str(agreement_count)
+			print 'We disagreed on this many ' + curr_type + ' labels: ' + str(disagreement_count)
+		elif data == TURKER:
+			print 'Turkers agreed on this many ' + curr_type + ' labels: ' + str(agreement_count)
+			print 'Turkers disagreed on this many ' + curr_type + ' labels: ' + str(disagreement_count)
+
+	return (curr_type, agreement_count, disagreement_count, total_dups)
 
 cluster(ramp_data, ramp_link, CLUSTER_THRESHOLD)
 cluster(surf_data, surf_link, CLUSTER_THRESHOLD)
