@@ -104,58 +104,60 @@ dist_matrix = pdist(latlngs,lambda x,y: haversine(x,y))
 # cluster based on distance and maybe label_type
 label_link = linkage(dist_matrix, method='complete')
 
-# cuts tree so that only labels less than 5 m apart are clustered, adds a col
-# to dataframe with label for the cluster they are in
-label_data['cluster'] = fcluster(label_link, t=CLUSTER_THRESHOLD, criterion='distance')
-#print pd.DataFrame(pd.DataFrame(label_data.groupby('cluster').size().rename('points_count')).groupby('points_count').size().rename('points_count_frequency'))
+def cluster(clust_thresh):
+	# cuts tree so that only labels less than 5 m apart are clustered, adds a col
+	# to dataframe with label for the cluster they are in
+	label_data['cluster'] = fcluster(label_link, t=clust_thresh, criterion='distance')
+	#print pd.DataFrame(pd.DataFrame(label_data.groupby('cluster').size().rename('points_count')).groupby('points_count').size().rename('points_count_frequency'))
 
-# Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
-# of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
-# we can look at them by hand through the admin interface to decide.
-included_labels = [] # list of tuples (label_type, lat, lng)
-problem_label_indices = [] # list of indices in dataset of labels that need to be verified
-clusters = label_data.groupby('cluster')
-total_dups = 0
-for clust_num, clust in clusters:
-	# only include one label type per user per cluster
-	no_dups = clust.drop_duplicates(subset=['label_type', 'turker_id'])
-	total_dups += (len(clust) - len(no_dups))
-	#count up the number of each label type in cluster, any with a majority are included
-	for label_type in included_types:
-		single_type_clust = no_dups.drop(no_dups[no_dups.label_type != label_type].index)
-		if len(single_type_clust) >= MAJORITY_THRESHOLD:
-			ave = np.mean(single_type_clust['coords'].tolist(), axis=0) # use ave pos of clusters
-			included_labels.append((label_type, ave[0], ave[1]))
-		else:
-			#print single_type_clust.index
-			problem_label_indices.extend(single_type_clust.index)
+	# Majority vote to decide what is included. If a cluster has at least 3 people agreeing on the type
+	# of the label, that is included. Any less, and we add it to the list of problem_clusters, so that
+	# we can look at them by hand through the admin interface to decide.
+	included_labels = [] # list of tuples (label_type, lat, lng)
+	problem_label_indices = [] # list of indices in dataset of labels that need to be verified
+	clusters = label_data.groupby('cluster')
+	total_dups = 0
+	for clust_num, clust in clusters:
+		# only include one label type per user per cluster
+		no_dups = clust.drop_duplicates(subset=['label_type', 'turker_id'])
+		total_dups += (len(clust) - len(no_dups))
+		#count up the number of each label type in cluster, any with a majority are included
+		for label_type in included_types:
+			single_type_clust = no_dups.drop(no_dups[no_dups.label_type != label_type].index)
+			if len(single_type_clust) >= MAJORITY_THRESHOLD:
+				ave = np.mean(single_type_clust['coords'].tolist(), axis=0) # use ave pos of clusters
+				included_labels.append((label_type, ave[0], ave[1]))
+			else:
+				#print single_type_clust.index
+				problem_label_indices.extend(single_type_clust.index)
 
-if DEBUG:
-	print 'total duplicates: ' + str(total_dups)
-	print 'Total agreements by label type:'
+	if DEBUG:
+		print 'total duplicates: ' + str(total_dups)
+		print 'Total agreements by label type:'
 
-included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
-if DEBUG: print included.iloc[:,0].value_counts()
-
-# output the labels from majority vote as a csv
-if TO_CSV:
 	included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
-	if data == GROUND_TRUTH:
-		if DEBUG: print 'We agreed on this many labels: ' + str(len(included))
+	if DEBUG: print included.iloc[:,0].value_counts()
 
-		#included.to_csv('../data/ground_truth-part1.csv', index=False)
-		included.to_csv('../data/ground_truth-final.csv', index=False)
+	# output the labels from majority vote as a csv
+	if TO_CSV:
+		included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
+		if data == GROUND_TRUTH:
+			if DEBUG: print 'We agreed on this many labels: ' + str(len(included))
 
-		# order GT labels that we are unsure about by cluster, so they are easier to manually look through.
-		problem_labels = label_data.loc[problem_label_indices]
-		if DEBUG: print 'We have this many labels that we disagreed on: ' + str(len(problem_labels))
+			#included.to_csv('../data/ground_truth-part1.csv', index=False)
+			included.to_csv('../data/ground_truth-final.csv', index=False)
 
-		# output GT labels that we are NOT sure about to another CSV so we can look through them.
-		problem_labels.to_csv('../data/ground_truth-problem_labels.csv', index=False)
-	elif data == TURKER:
-		if DEBUG: print 'Turkers agreed on this many labels: ' + str(len(included))
-		if DEBUG: print 'Turkers have this many labels that they disagreed on: ' + str(len(problem_label_indices))
-		included.to_csv('../data/turker-final.csv', index=False)
+			# order GT labels that we are unsure about by cluster, so they are easier to manually look through.
+			problem_labels = label_data.loc[problem_label_indices]
+			if DEBUG: print 'We have this many labels that we disagreed on: ' + str(len(problem_labels))
 
+			# output GT labels that we are NOT sure about to another CSV so we can look through them.
+			problem_labels.to_csv('../data/ground_truth-problem_labels.csv', index=False)
+		elif data == TURKER:
+			if DEBUG: print 'Turkers agreed on this many labels: ' + str(len(included))
+			if DEBUG: print 'Turkers have this many labels that they disagreed on: ' + str(len(problem_label_indices))
+			included.to_csv('../data/turker-final.csv', index=False)
+
+cluster(CLUSTER_THRESHOLD)
 
 sys.exit()
