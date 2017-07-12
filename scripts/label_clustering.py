@@ -14,7 +14,7 @@ CLUSTER_THRESHOLD = 0.005 # cluster all labels within 5 meter diameter
 # read in arguments from command line
 parser = argparse.ArgumentParser(description='Takes a set of labels from CSV, and outputs the labels grouped into clusters to a new CSV')
 parser.add_argument('data_source', type=str,
-                    help='Indicate whether to use ground truth (-gt) or turker (-t) data.')
+                    help='Indicate whether to use ground truth (gt) or turker (t) data.')
 parser.add_argument('--clust_thresh', type=float, default=0.005,
                     help='Cluster distance threshold (in meters)')
 parser.add_argument('--debug', action='store_true',
@@ -28,11 +28,10 @@ DEBUG = args.debug
 CLUSTER_THRESHOLD = args.clust_thresh
 TO_CSV = args.to_csv
 VALIDATE = args.validate
-if args.data_source in ['gt', 'GT', 'ground_truth', 'groundTruth', 'groundtruth', 'g',
-					   '-gt', '-GT', '-ground_truth', '-groundTruth', '-groundtruth', '-g']:
+if args.data_source in ['gt', 'GT', 'ground_truth', 'groundTruth', 'groundtruth', 'g']:
     data = GROUND_TRUTH
     MAJORITY_THRESHOLD = 2
-elif args.data_source in ['turker', 'turk', 't', '-turker', '-turk', '-t']:
+elif args.data_source in ['turker', 'turk', 't']:
 	data = TURKER
 	MAJORITY_THRESHOLD = 5
 else:
