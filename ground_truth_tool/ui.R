@@ -1,5 +1,6 @@
 library(shiny)
 library(googleway)
+library(leaflet)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
