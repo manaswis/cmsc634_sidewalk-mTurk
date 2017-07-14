@@ -172,7 +172,7 @@ def cluster(labels, link, clust_thresh):
 			print 'Turkers agreed on this many ' + curr_type + ' labels: ' + str(agreement_count)
 			print 'Turkers disagreed on this many ' + curr_type + ' labels: ' + str(disagreement_count)
 
-	return (curr_type, agreement_count, disagreement_count, total_dups)
+	return (curr_type, clust_thresh, agreement_count, disagreement_count, total_dups)
 
 if VALIDATE:
 	results = []
@@ -182,8 +182,24 @@ if VALIDATE:
 		results.append(cluster(surf_data, surf_link, thresh))
 		results.append(cluster(obs_data, obs_link, thresh))
 		results.append(cluster(noramp_data, noramp_link, thresh))
-	results_df = pd.DataFrame(results, columns=['type', 'agreements', 'disagreements', 'dups'])
-	results_df.to_csv('../data/clustering_validation.csv', index=False)
+	results_df = pd.DataFrame(results, columns=['type', 'thresh', 'agreements', 'disagreements', 'dups'])
+	agg_results = results_df.groupby('thresh', as_index=False).aggregate(np.sum)
+	# results_df.to_csv('../data/clustering_validation.csv', index=False)
+
+	# plot scatterplot of cluster threshold v dis/agreement and dups per label type using ggplot
+	from ggplot import *
+	plot1a = ggplot(results_df, aes(x='thresh', y='agreements')) + geom_point() + theme_bw() + facet_grid('type', scales='free')
+	plot1a.show()
+	plot1b = ggplot(agg_results, aes(x='thresh', y='agreements')) + geom_point() + theme_bw()
+	plot1b.show()
+	plot2a = ggplot(results_df, aes(x='thresh', y='disagreements')) + geom_point() + theme_bw() + facet_grid('type', scales='free')
+	plot2a.show()
+	plot2b = ggplot(agg_results, aes(x='thresh', y='disagreements')) + geom_point() + theme_bw()
+	plot2b.show()
+	plot3a = ggplot(results_df, aes(x='thresh', y='dups')) + geom_point() + theme_bw() + facet_grid('type', scales='free')
+	plot3a.show()
+	plot3b = ggplot(agg_results, aes(x='thresh', y='dups')) + geom_point() + theme_bw()
+	plot3b.show()
 else:
 	cluster(ramp_data, ramp_link, CLUSTER_THRESHOLD)
 	cluster(surf_data, surf_link, CLUSTER_THRESHOLD)
