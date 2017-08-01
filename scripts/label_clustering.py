@@ -33,8 +33,8 @@ if args.data_source in ['gt', 'GT', 'ground_truth', 'groundTruth', 'groundtruth'
     data = GROUND_TRUTH
     MAJORITY_THRESHOLD = 2
 elif args.data_source in ['turker', 'turk', 't']:
-	data = TURKER
-	MAJORITY_THRESHOLD = 5
+    data = TURKER
+    MAJORITY_THRESHOLD = 5
 else:
 	parser.error('Try passing \'gt\' for ground truth labels or \'t\' for turker labels')
 
@@ -130,6 +130,8 @@ def cluster(labels, link, clust_thresh):
 	problem_label_indices = [] # list of indices in dataset of labels that need to be verified
 	clusters = labels.groupby('cluster')
 	total_dups = 0
+	agreement_count = 0
+	disagreement_count = 0
 	for clust_num, clust in clusters:
 		# only include one label per user per cluster
 		no_dups = clust.drop_duplicates(subset=['turker_id'])
@@ -138,14 +140,16 @@ def cluster(labels, link, clust_thresh):
 		if len(no_dups) >= MAJORITY_THRESHOLD:
 			ave = np.mean(no_dups['coords'].tolist(), axis=0) # use ave pos of clusters
 			included_labels.append((curr_type, ave[0], ave[1]))
+			agreement_count += 1
 		else:
 			#print no_dups.index
 			problem_label_indices.extend(no_dups.index)
+			disagreement_count += 1
 
 	included = pd.DataFrame(included_labels, columns=['type', 'lat', 'lng'])
 
-	agreement_count = len(included)
-	disagreement_count = len(problem_label_indices)
+	# agreement_count = len(included)
+	# disagreement_count = len(problem_label_indices)
 
 	# output the labels from majority vote as a csv
 	if TO_CSV:
